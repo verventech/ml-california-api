@@ -1,0 +1,4 @@
+.venv/
+classifier_model.joblib
+regressor_model.joblib
+*.joblib

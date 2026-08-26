@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>California Housing Predictor</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 500px; margin: 30px auto; padding: 20px; border: 1px solid #ccc; border-radius: 8px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        label { display: block; margin-top: 10px; font-weight: bold; font-size: 14px;}
+        input { width: 100%; padding: 8px; margin-top: 5px; box-sizing: border-box; }
+        .btn-group { display: flex; gap: 10px; margin-top: 25px; }
+        button { flex: 1; padding: 12px; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;}
+        .btn-price { background-color: #007bff; }
+        .btn-class { background-color: #28a745; }
+        #result { margin-top: 25px; font-weight: bold; font-size: 18px; text-align: center; padding: 15px; background: #f8f9fa; border-radius: 4px;}
+    </style>
+</head>
+<body>
+
+    <h2>California Housing Predictor</h2>
+    <p style="font-size: 14px; color: #666;">Enter block group demographics to predict property value.</p>
+    
+    <div class="grid">
+        <div>
+            <label>Median Income ($10k unit):</label>
+            <input type="number" step="0.1" id="MedInc" value="8.32">
+            
+            <label>Median House Age:</label>
+            <input type="number" id="HouseAge" value="41">
+            
+            <label>Avg Rooms / House:</label>
+            <input type="number" step="0.1" id="AveRooms" value="6.98">
+            
+            <label>Avg Bedrooms / House:</label>
+            <input type="number" step="0.1" id="AveBedrms" value="1.02">
+        </div>
+        <div>
+            <label>Block Population:</label>
+            <input type="number" id="Population" value="322">
+            
+            <label>Avg People / House:</label>
+            <input type="number" step="0.1" id="AveOccup" value="2.55">
+            
+            <label>Latitude:</label>
+            <input type="number" step="0.01" id="Latitude" value="37.88">
+            
+            <label>Longitude:</label>
+            <input type="number" step="0.01" id="Longitude" value="-122.23">
+        </div>
+    </div>
+
+    <div class="btn-group">
+        <button class="btn-price" onclick="predict('price')">Predict Exact Price</button>
+        <button class="btn-class" onclick="predict('category')">Predict Class</button>
+    </div>
+
+    <div id="result">Awaiting input...</div>
+
+    <script>
+        async function predict(type) {
+            const payload = {
+                MedInc: parseFloat(document.getElementById('MedInc').value),
+                HouseAge: parseFloat(document.getElementById('HouseAge').value),
+                AveRooms: parseFloat(document.getElementById('AveRooms').value),
+                AveBedrms: parseFloat(document.getElementById('AveBedrms').value),
+                Population: parseFloat(document.getElementById('Population').value),
+                AveOccup: parseFloat(document.getElementById('AveOccup').value),
+                Latitude: parseFloat(document.getElementById('Latitude').value),
+                Longitude: parseFloat(document.getElementById('Longitude').value)
+            };
+
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerText = "Processing prediction...";
+
+            const endpoint = type === 'price' ? '/predict/price' : '/predict/category';
+
+            try {
+                const response = await fetch(`http://127.0.0.1:8000${endpoint}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+                
+                if (type === 'price') {
+                    let formattedPrice = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(data.estimated_price);
+                    resultDiv.innerText = `Predicted Value: ${formattedPrice}`;
+                } else {
+                    resultDiv.innerText = `Classification: ${data.category}\n(Confidence: ${data.confidence}%)`;
+                }
+            } catch (error) {
+                resultDiv.innerText = "Error making prediction. Is backend running?";
+            }
+        }
+    </script>
+</body>
+</html>
